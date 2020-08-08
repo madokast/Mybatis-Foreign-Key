@@ -8,9 +8,7 @@
 
 
     <plugins>
-        <plugin interceptor="com.github.foreignkey.ForeignKeyInterceptor">
-            <property name="config" value="constraints.yml"/>
-        </plugin>
+        <plugin interceptor="com.github.foreignkey.ForeignKeyInterceptor"/>
     </plugins>
 
 
@@ -28,6 +26,7 @@
 
     <mappers>
         <mapper resource="mapper/user-mapper.xml"/>
+        <mapper resource="mapper/comment-mapper.xml"/>
     </mappers>
 
 </configuration>

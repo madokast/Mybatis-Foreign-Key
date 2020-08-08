@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS `tb_user_role`;
+DROP TABLE IF EXISTS `tb_comment`;
 DROP TABLE IF EXISTS `tb_user`;
 DROP TABLE IF EXISTS `tb_role`;
 
@@ -9,6 +10,14 @@ CREATE TABLE `tb_user`
     `username` varchar(20) NOT NULL,
     PRIMARY KEY (`id`)
 ) comment '用户表';
+
+CREATE TABLE `tb_comment`
+(
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `user_id` varchar(40) NOT NULL,
+    `content` varchar(255) NOT NULL,
+    PRIMARY KEY (`id`)
+) comment '用户发言表';
 
 CREATE TABLE `tb_role`
 (
@@ -24,8 +33,6 @@ CREATE TABLE `tb_user_role`
     `user_id` varchar(40) NOT NULL,
     `role_id` int(11)     NOT NULL,
     PRIMARY KEY (`id`)
-    -- CONSTRAINT `fk_user_role_t_role_1` FOREIGN KEY (`role_id`) REFERENCES `tb_role` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-    -- CONSTRAINT `fk_user_role_t_user_1` FOREIGN KEY (`user_id`) REFERENCES `tb_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) comment '用户角色表';
 
 INSERT INTO `tb_role`(`id`, `name`)
@@ -40,6 +47,11 @@ VALUES ('r01', 'reader1'),
        ('w02', 'author2'),
        ('a01', 'admin1'),
        ('a02', 'admin2');
+
+INSERT INTO `tb_comment`( `user_id`, `content`)
+VALUES ('r01','文章写得真好'),
+       ('r01','作者快更'),
+       ('w01','欢迎点赞');
 
 INSERT INTO `tb_user_role`(`user_id`, `role_id`)
 VALUES ('r01', '1'),

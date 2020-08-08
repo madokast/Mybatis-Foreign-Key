@@ -1,10 +1,16 @@
 constraints:
+  - name: fk_comment_user
+    validation: true
+    primary-table: tb_user
+    primary-key: id
+    foreign-table: tb_comment
+    foreign-key: user_id
+    on-update: NO-ACTION
+    on-delete: CASCADE
   - primary-table: tb_user
     primary-key: id
     foreign-table: tb_user_role
     foreign-key: user_id
-    on-update: no-action
-    on-delete: RESTRICT
   - primary-table: tb_role
     primary-key: id
     foreign-table: tb_user_role

@@ -1,6 +1,8 @@
 package com.github.foreignkey.test;
 
+import com.github.foreignkey.entity.Comment;
 import com.github.foreignkey.entity.User;
+import com.github.foreignkey.mapper.CommentMapper;
 import com.github.foreignkey.mapper.UserMapper;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.jdbc.ScriptRunner;
@@ -45,7 +47,7 @@ public class TestForeignKeyInterceptor {
     }
 
     @Test
-    public void insertTest() {
+    public void insertUserTest() {
         String userId = "r03";
         String username = "reader3";
 
@@ -69,4 +71,17 @@ public class TestForeignKeyInterceptor {
     }
 
 
+    @Test
+    public void insertCommentTest(){
+        SqlSession sqlSession = sqlSessionFactory.openSession(true);
+
+        CommentMapper mapper = sqlSession.getMapper(CommentMapper.class);
+
+        Comment comment = new Comment();
+        comment.setContent("test comment");
+        comment.setUserId("a01");
+        mapper.insert(comment);
+        LOGGER.debug(comment.toString());
+        Assert.assertEquals((Object) 4, comment.getId());
+    }
 }

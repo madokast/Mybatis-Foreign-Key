@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.github.foreignkey.mapper.CommentMapper">
+
+    <resultMap id="comment" type="com.github.foreignkey.entity.Comment">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="content" property="content"/>
+    </resultMap>
+
+
+    <select id="selectByUserId" resultMap="comment">
+        SELECT `id`, `user_id`, `content`
+        FROM `tb_comment`
+        WHERE `user_id` = #{userId}
+    </select>
+
+    <insert id="insert" parameterType="com.github.foreignkey.entity.Comment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `tb_comment`(`user_id`, `content`)
+        VALUES (#{userId}, #{content})
+    </insert>
+
+    <select id="count" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM `tb_comment`
+        WHERE `user_id` = #{userId}
+    </select>
+
+</mapper>
