@@ -3,26 +3,27 @@ package com.github.foreignkey;
 
 import com.github.foreignkey.exception.ConfigException;
 import com.github.foreignkey.exception.ForeignKeyConstraintException;
+import com.github.foreignkey.exception.SQLParseException;
+import com.github.foreignkey.sql.InsertSQL;
+import com.github.foreignkey.utils.ConstraintSQLGenerator;
+import com.github.foreignkey.utils.SQLParser;
+import com.github.foreignkey.utils.StringUtils;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.JdbcParameter;
 import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
-import net.sf.jsqlparser.expression.operators.relational.ItemsList;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.insert.Insert;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
-import org.apache.ibatis.executor.result.DefaultResultHandler;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.plugin.*;
-import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -46,53 +47,124 @@ public class ForeignKeyInterceptor implements Interceptor {
 
     private final Log LOGGER = LogFactory.getLog(ForeignKeyInterceptor.class);
 
+    private ConstraintSQLGenerator sqlGenerator = new ConstraintSQLGenerator();
+
+    private SQLParser sqlParser = new SQLParser();
+
     private ConstraintConfig constraintConfig;
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         Executor executor = (Executor) invocation.getTarget();
 
-
         Object[] args = invocation.getArgs();
+
+        // MappedStatement 对象代表一个配置的 sql 信息，如 xml配置的<select>或者注解配置的 @Select
         MappedStatement ms = (MappedStatement) args[0];
+
+        // mapper 方法中入参
         Object parameter = args[1];
 
+        // 对 sqlSource中 sql和 parameter 参数的封装
+        // 一般可以认为：sqlSource + mapper方法的入参 = BoundSql
         BoundSql boundSql = ms.getBoundSql(parameter);
 
-        List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
-
+        // 拿到 sql 语句，这时语句中的 #{} 已经换为 ?
         String sql = boundSql.getSql();
+        LOGGER.debug("拦截到 sql=" + sql);
 
+        // sql 中 ? 和 parameter 属性的映射
+        // 如 sql 中第一个 ? 对应 ((User)parameter).id
+        // 注意：parameterMappings 是一个 list，顺序是很重要的，list 顺序就是 SQL 语句中 ? 的顺序
+        List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
+        LOGGER.debug("sql 参数映射=" + parameterMappings);
+        LOGGER.debug("sql 参数=" + parameter);
 
-        switch (UpdateType.resolve(sql)) {
+        // 分析 sql 语句类型 insert update delete replace
+        switch (sqlParser.resolveUpdateType(sql)) {
             case INSERT:
                 // 判断插入是不是在从表中进行
-                Insert insert = (Insert) CCJSqlParserUtil.parse(sql);
-                String table = StringUtils.dropUnquote(insert.getTable().getName());
-                List<String> columns = insert.getColumns().stream().map(Column::getColumnName).map(StringUtils::dropUnquote).collect(Collectors.toList());
-                List<Expression> expressions = ((ExpressionList) insert.getItemsList()).getExpressions();// JdbcParameters
-                List<Constraint> cons = constraintConfig.getForeignConstraints(table);
+                InsertSQL insertSQL = sqlParser.parseInsertSQL(sql);
+                String tableName = insertSQL.getTableName();
+                List<String> foreignTableColumnNames = insertSQL.getColumnNames();
+                List<String> foreignTableValues = insertSQL.getValues();
+//                Insert insert = (Insert) CCJSqlParserUtil.parse(sql);
+//                String table = StringUtils.dropUnquote(insert.getTable().getName());
+//                List<String> columns = insert.getColumns().stream().map(Column::getColumnName).map(StringUtils::dropUnquote).collect(Collectors.toList());
+//                List<Expression> expressions = ((ExpressionList) insert.getItemsList()).getExpressions();// JdbcParameters
+                List<Constraint> cons = constraintConfig.getForeignConstraints(tableName);
+
                 // 对于每一个约束，判断是否违反
                 for (Constraint con : cons) {
-                    if (!con.getValidation()) continue;
+                    if (!con.getValidation()) continue; // 跳过无效约束
                     List<String> foreignKeys = con.getForeignKey();
+                    List<String> primaryKeys = con.getPrimaryKey();
 
-                    ParameterMapping[] psArr = new ParameterMapping[foreignKeys.size()];
-                    for (int i = 0; i < parameterMappings.size(); i++) {
-                        ParameterMapping pm = parameterMappings.get(i);
-                        String col = columns.get(i);
-                        Expression exp = expressions.get(i);
-                        if (exp instanceof JdbcParameter && foreignKeys.contains(col)) {
-                            psArr[foreignKeys.indexOf(col)] = pm;
+
+                    // 假如说约束是 foreign-key = {cc4, cc3} primary-key = {c4,c3}
+                    // insert 语句是 insert into ft(cc1,cc2,cc3,cc4) values(1,?,2,?)
+                    // 那么需要构建的 select count SQL 的条件判断将是 where c4 = ? and c3 = 2
+                    // -----------------
+                    // 因此解析 insert SQL
+                    // foreignTableColumnNames = (cc1,cc2,cc3,cc4)
+                    // foreignTableValues = (1,?,2,?)
+                    // 这里注意第一个问号，由 parameterMappings[0] 负责，第二个问号，由 parameterMappings[1] 负责
+                    // ------------------
+                    // 我们用 countParameterMappings 封装 select count SQL 中问号对应的 ParameterMapping，
+                    // 这个 mapping 直接来自上面的 parameterMappings
+                    // 用 countColValMap 封装字面量，如本例中 c3->2
+                    // -------------------
+                    // 我们遍历 con.getForeignKey() {cc4, cc3}
+                    // 第一轮，cc4，对应 foreignTableColIndex = cc4 in (cc1,cc2,cc3,cc4) = 3
+                    // 查看 foreignTableColIndex = 3 对应的 values(1,?,2,?) ，是 问号
+                    // 并且知道是第2个问号，所以 countParameterMappings.add(parameterMappings[1])
+                    // -------------------
+                    // 第二轮，cc3，对应 foreignTableColIndex = cc3 in (cc1,cc2,cc3,cc4) = 2
+                    // 查看 foreignTableColIndex = 2 对应的 values(1,?,2,?) ，是 2 ，是一个字面量
+                    // 所以在 countColValMap 中添加 c3->2
+                    // 怎么找到 列名 c3 呢？ primaryKeys.get(i) ,因为约束 Constraint 中“主键”和“外键”一一对应
+                    List<ParameterMapping> countParameterMappings = new ArrayList<>();
+                    Map<String, String> countColValMap = new HashMap<>();
+                    for (int i = 0; i < foreignKeys.size(); i++) {
+                        String foreignKey = foreignKeys.get(i);
+
+                        int foreignTableColIndex = foreignTableColumnNames.indexOf(foreignKey);
+                        if (foreignTableColIndex == -1) {
+                            throw new SQLParseException("columns in insert SQL(" + sql
+                                    + ") cannot match constraint(" + con + "), maybe you want insert null value at "
+                                    + tableName + "(" + foreignKey + ")?");
+                        } else {
+                            String foreignTableValue = foreignTableValues.get(foreignTableColIndex);
+                            if (foreignTableValue.equals("?")) {
+                                int numberOfQuestionMarkBefore =
+                                        StringUtils.numberOfQuestionMarkBefore(foreignTableColIndex, foreignTableValues);
+                                countParameterMappings.add(parameterMappings.get(numberOfQuestionMarkBefore));
+                            } else {
+                                countColValMap.put(primaryKeys.get(i), foreignTableValue);
+                            }
                         }
                     }
 
-                    String sqlSelectFromPrimaryTable = con.getSqlSelectFromPrimaryTableByPrimaryKeys();
+
+//                    for (int i = 0; i < parameterMappings.size(); i++) {
+//                        ParameterMapping pm = parameterMappings.get(i);
+//                        String col = columns.get(i);
+//                        Expression exp = expressions.get(i);
+//                        if (foreignKeys.contains(col)) {
+//                            if (exp instanceof JdbcParameter) {
+//                                foreignKeysMappingArray[foreignKeys.indexOf(col)] = pm;
+//                            } else {
+//                                //ParameterMapping
+//                            }
+//                        }
+//                    }
+
+                    String sqlSelectFromPrimaryTable = sqlGenerator.selectCountFromPrimaryTablePrimaryKeys(con, countColValMap);
 
                     BoundSql countBoundSql = new BoundSql(
                             ms.getConfiguration(),
                             sqlSelectFromPrimaryTable,
-                            Arrays.asList(psArr),
+                            countParameterMappings,
                             parameter
                     );
 
@@ -117,6 +189,7 @@ public class ForeignKeyInterceptor implements Interceptor {
 
                     Long count = (Long) ((List) countResultList).get(0);
 
+                    // 违反约束
                     if (count <= 0) throw ForeignKeyConstraintException.insertToForeignTableFailed(con, parameter);
                 }
 

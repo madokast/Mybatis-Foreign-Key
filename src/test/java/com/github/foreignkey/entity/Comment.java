@@ -1,6 +1,8 @@
 package com.github.foreignkey.entity;
 
 
+import java.util.Objects;
+
 /**
  * 用户发言表
  * `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -18,6 +20,15 @@ public class Comment {
     private String userId;
 
     private String content;
+
+    public Comment() {
+    }
+
+    public Comment(Integer id, String userId, String content) {
+        this.id = id;
+        this.userId = userId;
+        this.content = content;
+    }
 
     public Integer getId() {
         return id;
@@ -50,5 +61,20 @@ public class Comment {
                 ", userId='" + userId + '\'' +
                 ", content='" + content + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Comment comment = (Comment) o;
+        return Objects.equals(id, comment.id) &&
+                Objects.equals(userId, comment.userId) &&
+                Objects.equals(content, comment.content);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, userId, content);
     }
 }

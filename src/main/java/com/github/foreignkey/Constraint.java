@@ -2,6 +2,7 @@ package com.github.foreignkey;
 
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 一个外键约束
@@ -27,15 +28,6 @@ public class Constraint {
     private ConstraintAction onUpdate;
 
     private ConstraintAction onDelete;
-
-    /*---------- 以下为自动生成的 sql 语句，由总配置类 ConstraintConfig 负责生成 -------------*/
-
-    /**
-     * SELECT COUNT(*) FROM primaryTable WHERE primaryKey[0] = ? [AND primaryKey[1] = ?] LIMIT 1
-     * 用于检查主表上是否有对应的主键
-     */
-    private String sqlSelectFromPrimaryTableByPrimaryKeys;
-
 
     /*---------- setter getter -------------*/
 
@@ -103,14 +95,6 @@ public class Constraint {
         this.onDelete = onDelete;
     }
 
-    public String getSqlSelectFromPrimaryTableByPrimaryKeys() {
-        return sqlSelectFromPrimaryTableByPrimaryKeys;
-    }
-
-    public void setSqlSelectFromPrimaryTableByPrimaryKeys(String sqlSelectFromPrimaryTableByPrimaryKeys) {
-        this.sqlSelectFromPrimaryTableByPrimaryKeys = sqlSelectFromPrimaryTableByPrimaryKeys;
-    }
-
     @Override
     public String toString() {
         return "Constraint{" +
@@ -123,5 +107,25 @@ public class Constraint {
                 ", onUpdate=" + onUpdate +
                 ", onDelete=" + onDelete +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Constraint that = (Constraint) o;
+        return Objects.equals(name, that.name) &&
+                Objects.equals(validation, that.validation) &&
+                Objects.equals(primaryTable, that.primaryTable) &&
+                Objects.equals(primaryKey, that.primaryKey) &&
+                Objects.equals(foreignTable, that.foreignTable) &&
+                Objects.equals(foreignKey, that.foreignKey) &&
+                onUpdate == that.onUpdate &&
+                onDelete == that.onDelete;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, validation, primaryTable, primaryKey, foreignTable, foreignKey, onUpdate, onDelete);
     }
 }

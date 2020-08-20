@@ -12,15 +12,4 @@ import java.sql.SQLException;
 
 public enum UpdateType {
     INSERT, UPDATE, DELETE, REPLACE;
-
-    public static UpdateType resolve(String sql) {
-        sql = sql.trim().substring(0, 8).toUpperCase();
-        if (sql.startsWith("INSERT")) return INSERT;
-        if (sql.startsWith("UPDATE")) return UPDATE;
-        if (sql.startsWith("DELETE")) return DELETE;
-        if (sql.startsWith("REPLACE")) return REPLACE;
-
-        // 见鬼了
-        throw new RuntimeException(new SQLException("sql[" + sql + "] is not an updating statement"));
-    }
 }

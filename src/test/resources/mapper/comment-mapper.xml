@@ -11,6 +11,11 @@
         <result column="content" property="content"/>
     </resultMap>
 
+    <select id="selectById" resultMap="comment">
+        SELECT `id`, `user_id`, `content`
+        FROM `tb_comment`
+        WHERE `id` = #{id}
+    </select>
 
     <select id="selectByUserId" resultMap="comment">
         SELECT `id`, `user_id`, `content`
@@ -21,6 +26,36 @@
     <insert id="insert" parameterType="com.github.foreignkey.entity.Comment" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO `tb_comment`(`user_id`, `content`)
         VALUES (#{userId}, #{content})
+    </insert>
+
+    <insert id="insertParam">
+        INSERT INTO `tb_comment`(`user_id`, `content`)
+        VALUES (#{param1}, #{param2})
+    </insert>
+
+    <insert id="insertParamReverse">
+        INSERT INTO `tb_comment`(`content`, `user_id`)
+        VALUES (#{param2}, #{param1})
+    </insert>
+
+    <insert id="insertArg">
+        INSERT INTO `tb_comment`(`user_id`, `content`)
+        VALUES (#{arg0}, #{arg1})
+    </insert>
+
+    <insert id="insertParamName">
+        INSERT INTO `tb_comment`(`user_id`, `content`)
+        VALUES (#{userId}, #{content})
+    </insert>
+
+    <insert id="insertStaticComment1">
+        INSERT INTO `tb_comment`(`user_id`, `content`)
+        VALUES ('r01', '这本小说真有趣')
+    </insert>
+
+    <insert id="insertStaticComment2">
+        INSERT INTO `tb_comment`(`user_id`, `content`)
+        VALUES ('s01', '我是谁我在哪')
     </insert>
 
     <select id="count" resultType="java.lang.Long">

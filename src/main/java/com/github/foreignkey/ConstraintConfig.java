@@ -32,7 +32,8 @@ public class ConstraintConfig {
 
     public void addConstraint(Constraint constraint) {
         validate(constraint);
-        generateSql(constraint);
+        // 不在这里生成，由 ConstraintSQLGenerator 动态生成
+//        generateSql(constraint);
 
         String primaryTable = constraint.getPrimaryTable();
         String foreignTable = constraint.getForeignTable();
@@ -49,23 +50,23 @@ public class ConstraintConfig {
         return foreignTableMap.getOrDefault(table, Collections.EMPTY_LIST);
     }
 
-    /**
-     * 生成验证完整性所需要的 sql
-     * 嫌麻烦，就不懒加载了
-     */
-    private void generateSql(Constraint constraint) {
-        String primaryTable = constraint.getPrimaryTable();
-        List<String> primaryKey = constraint.getPrimaryKey();
-
-        // SELECT COUNT(*) FROM primaryTable WHERE primaryKey[0] = ? [AND primaryKey[1] = ?] LIMIT 1
-        SQL sql = new SQL().SELECT("COUNT(*)").FROM(primaryTable);
-        for (String pk : primaryKey) {
-            sql.WHERE(pk + " = ? ");
-        }
-        sql.LIMIT(1);
-
-        constraint.setSqlSelectFromPrimaryTableByPrimaryKeys(sql.toString());
-    }
+//    /**
+//     * 生成验证完整性所需要的 sql
+//     * 嫌麻烦，就不懒加载了
+//     */
+//    private void generateSql(Constraint constraint) {
+//        String primaryTable = constraint.getPrimaryTable();
+//        List<String> primaryKey = constraint.getPrimaryKey();
+//
+//        // SELECT COUNT(*) FROM primaryTable WHERE primaryKey[0] = ? [AND primaryKey[1] = ?] LIMIT 1
+//        SQL sql = new SQL().SELECT("COUNT(*)").FROM(primaryTable);
+//        for (String pk : primaryKey) {
+//            sql.WHERE(pk + " = ? ");
+//        }
+//        sql.LIMIT(1);
+//
+//        constraint.setSqlSelectFromPrimaryTableByPrimaryKeys(sql.toString());
+//    }
 
     /**
      * constraint not null

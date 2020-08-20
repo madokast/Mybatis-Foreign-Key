@@ -1,4 +1,4 @@
-package com.github.foreignkey.test;
+package com.github.foreignkey.test.mapper;
 
 import com.github.foreignkey.entity.User;
 import com.github.foreignkey.mapper.UserMapper;
