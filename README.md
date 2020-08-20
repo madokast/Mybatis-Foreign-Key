@@ -63,3 +63,42 @@ constraints:
 大小写不敏感。
 默认均为 NO-ACTION。
 各个值的含义可参考任意一本关系数据库书籍。
+
+## 难点一 SQL语句中字面量和参数(?)的解析
+假如说约束是 foreign-key = {cc4, cc3} 和 primary-key = {c4,c3}
+
+insert 从表语句是 insert into ft(cc1,cc2,cc3,cc4) values(1,?,2,?)
+
+那么需要构建的 select count SQL 中条件判断部分将是 where c4 = ? and c3 = 2
+
+首先解析 insert SQL
+```$xslt
+cols = (cc1,cc2,cc3,cc4)
+
+vals = (1,?,2,?)
+```
+
+在 Mybatis 中，第一个问号，由 parameterMappings[0] 负责，第二个问号，由 parameterMappings[1] 负责
+
+我们用一个 list 封装 select count SQL 中问号对应的 ParameterMapping，
+这个 mapping 直接来自上面的 parameterMappings，但是注意顺序有可能发生变化，且不是所有的 parameterMappings 都放入这个 list 中
+
+用一个 map 封装字面量，如本例中 c3->2
+
+我们遍历 foreign-key {cc4, cc3}
+
+第一轮，foreign-key[0] = cc4，对应 colIndex = cc4 in (cc1,cc2,cc3,cc4) = 3
+
+查看 colIndex = 3 对应的 vals(1,?,2,?)，是问号
+
+并且知道是第2个问号，所以 list.add(parameterMappings[1])
+
+第二轮，foreign-key[1] = cc3，对应 colIndex = cc3 in (cc1,cc2,cc3,cc4) = 2
+
+查看 colIndex = 2 对应的 vals(1,?,2,?)，是一个字面量 2
+
+所以在 map 中添加 c3->2
+
+怎么找到列名 c3 呢？ primary-key[1] = c3,因为约束 Constraint 中“主键”和“外键”一一对应
+
+至此 list 和 map 中都封装了我想要的信息。
