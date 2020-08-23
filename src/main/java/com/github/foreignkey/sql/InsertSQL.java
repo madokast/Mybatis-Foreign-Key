@@ -31,7 +31,7 @@ public class InsertSQL {
     private List<String> columnNames;
 
     /**
-     * 表名
+     * 参数值
      * 和列名一一对应
      * 例如 ? 'r01'
      */

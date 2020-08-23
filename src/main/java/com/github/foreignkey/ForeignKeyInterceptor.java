@@ -88,10 +88,6 @@ public class ForeignKeyInterceptor implements Interceptor {
                 String tableName = insertSQL.getTableName();
                 List<String> foreignTableColumnNames = insertSQL.getColumnNames();
                 List<String> foreignTableValues = insertSQL.getValues();
-//                Insert insert = (Insert) CCJSqlParserUtil.parse(sql);
-//                String table = StringUtils.dropUnquote(insert.getTable().getName());
-//                List<String> columns = insert.getColumns().stream().map(Column::getColumnName).map(StringUtils::dropUnquote).collect(Collectors.toList());
-//                List<Expression> expressions = ((ExpressionList) insert.getItemsList()).getExpressions();// JdbcParameters
                 List<Constraint> cons = constraintConfig.getForeignConstraints(tableName);
 
                 // 对于每一个约束，判断是否违反
@@ -144,20 +140,6 @@ public class ForeignKeyInterceptor implements Interceptor {
                             }
                         }
                     }
-
-
-//                    for (int i = 0; i < parameterMappings.size(); i++) {
-//                        ParameterMapping pm = parameterMappings.get(i);
-//                        String col = columns.get(i);
-//                        Expression exp = expressions.get(i);
-//                        if (foreignKeys.contains(col)) {
-//                            if (exp instanceof JdbcParameter) {
-//                                foreignKeysMappingArray[foreignKeys.indexOf(col)] = pm;
-//                            } else {
-//                                //ParameterMapping
-//                            }
-//                        }
-//                    }
 
                     String sqlSelectFromPrimaryTable = sqlGenerator.selectCountFromPrimaryTablePrimaryKeys(con, countColValMap);
 

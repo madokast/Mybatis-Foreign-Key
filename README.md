@@ -9,16 +9,7 @@
     <plugin interceptor="com.github.foreignkey.ForeignKeyInterceptor"/>
 </plugins>
 ~~~
-同时在项目中放入配置文件 constraints.yml (例如 maven 项目即放在 resources 文件夹中)
-也可以利用 property 标签，指定配置文件的地址和名字
-~~~
-<plugins>
-    <plugin interceptor="com.github.foreignkey.ForeignKeyInterceptor">
-        <property name="config" value="database/foreign-keys.yml"/>
-    </plugin>
-</plugins>
-~~~
-### (2/2) 编写配置文件
+### (2/2) 编写配置文件 constraints.yml
 配置文件采用 yml 格式，目的是为了容易书写 list 形式的配置，格式如下
 ~~~
 constraints:
@@ -63,6 +54,14 @@ constraints:
 大小写不敏感。
 默认均为 NO-ACTION。
 各个值的含义可参考任意一本关系数据库书籍。
+5. 配置文件使用默认名称 constraints.yml 并放在根目录时，本插件能自动读取。否则应在插件配置中，指定配置文件的位置 
+~~~
+<plugins>
+    <plugin interceptor="com.github.foreignkey.ForeignKeyInterceptor">
+        <property name="config" value="database/foreign-keys.yml"/>
+    </plugin>
+</plugins>
+~~~
 
 ## 难点一 SQL语句中字面量和参数(?)的解析
 假如说约束是 foreign-key = {cc4, cc3} 和 primary-key = {c4,c3}
