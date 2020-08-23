@@ -87,12 +87,12 @@ cols = [cc1, cc2, cc3, cc4]
 vals = [1, ?, 2, ?]
 ~~~
 
-在 Mybatis 中使用 List<ParameterMapping> 配置 SQL 中每个 ? 的参数，第一个问号，由 parameterMappings[0] 负责，第二个问号，由 parameterMappings[1] 负责等。
+在 Mybatis 中使用 List\<ParameterMapping\> 配置 SQL 中每个 ? 的参数，第一个问号，由 parameterMappings[0] 负责，第二个问号，由 parameterMappings[1] 负责等。
 
 因此我们同样用一个 list 封装 SQL2 中问号对应的 ParameterMapping，
-这个 ParameterMapping 直接来自上面的 List<ParameterMapping>，但是注意顺序有可能发生变化，且不是所有的 parameterMappings 都放入这个 list 中。
+这个 ParameterMapping 直接来自上面的 List\<ParameterMapping\>，但是注意顺序有可能发生变化，且不是所有的 parameterMappings 都放入这个 list 中。
 
-另外，使用一个 map 封装字面量，如本例中 c3->2。
+另外，使用一个 map 封装字面量映射，如本例中 c3->2。
 
 我们遍历 foreign-key [cc4, cc3]。
 
