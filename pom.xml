@@ -36,6 +36,9 @@
             <optional>true</optional>
         </dependency>
 
+
+        <!--https://mvnrepository.com/artifact/com.github.jsqlparser/jsqlparser-->
+        <!--License	Apache 2.0 & LGPL 2.1-->
         <dependency>
             <groupId>com.github.jsqlparser</groupId>
             <artifactId>jsqlparser</artifactId>
@@ -43,6 +46,7 @@
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.yaml/snakeyaml -->
+        <!-- License Apache 2.0-->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
@@ -50,7 +54,8 @@
         </dependency>
 
 
-        <!-- test -->
+        <!-- 以下为测试依赖 -->
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
